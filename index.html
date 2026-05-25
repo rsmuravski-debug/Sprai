@@ -90,10 +90,6 @@
             background-color: #fef9e7;
             border-left: 5px solid #f1c40f;
         }
-        .other {
-            background-color: #fcfcfc;
-            border-left: 5px solid #95a5a6;
-        }
         .card-title {
             font-weight: bold;
             font-size: 16px;
@@ -109,7 +105,6 @@
         }
         .badge-best { background-color: #2ecc71; }
         .badge-second { background-color: #f1c40f; color: #333; }
-        .badge-other { background-color: #95a5a6; }
         .data-row {
             display: flex;
             justify-content: space-between;
@@ -161,7 +156,7 @@
     <h2>Розрахунок Обприскувача</h2>
     
     <div class="info-box">
-        <strong>Конфігурація:</strong> Штанга 10м (20 форсунок, крок 50 см). 
+        <strong>Конфігурація:</strong> Штанга 10м (20 форсунок, крок 50 см).
     </div>
 
     <div class="input-group">
@@ -232,9 +227,10 @@ function calculateSettings() {
 
     vsiVarianty.sort((a, b) => a.dev - b.dev);
 
+    // Відбираємо чітко ТОП-2 найкращих варіанти
     let recommended = [];
     vsiVarianty.forEach(v => {
-        if (v.speed >= 4.5 && v.speed <= 15.0 && recommended.length < 3) {
+        if (v.speed >= 4.5 && v.speed <= 15.0 && recommended.length < 2) {
             recommended.push(v);
         }
     });
@@ -246,19 +242,9 @@ function calculateSettings() {
 
     let htmlContent = '';
     recommended.forEach((v, index) => {
-        let cardClass = 'card other';
-        let badgeClass = 'badge badge-other';
-        let badgeText = '\ud83d\udc4d ВАРІАНТ \u21163';
-
-        if (index === 0) {
-            cardClass = 'card best';
-            badgeClass = 'badge badge-best';
-            badgeText = '\u2b50 НАЙКРАЩИЙ РЕЖИМ';
-        } else if (index === 1) {
-            cardClass = 'card second';
-            badgeClass = 'badge badge-second';
-            badgeText = '\ud83d\udc4d ВАРІАНТ \u21162';
-        }
+        let cardClass = index === 0 ? 'card best' : 'card second';
+        let badgeClass = index === 0 ? 'badge badge-best' : 'badge badge-second';
+        let badgeText = index === 0 ? '\u2b50 НАЙКРАЩИЙ РЕЖИМ' : '\ud83d\udc4d ДРУГИЙ ВАРІАНТ';
 
         htmlContent += `
             <div class="${cardClass}">
@@ -268,7 +254,7 @@ function calculateSettings() {
                 </div>
                 <div class="data-row">
                     <span class="data-label">Робочий тиск:</span>
-                    <span class="data-value">${v.pressure.toFixed(1)} бар</span>
+                    <span class="data-value">${v.pressure.toFixed(1)} Legal бар</span>
                 </div>
                 <div class="data-row">
                     <span class="data-label">Точна витрата:</span>
