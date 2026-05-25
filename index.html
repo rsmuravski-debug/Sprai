@@ -177,17 +177,17 @@
     <h2>Розрахунок Обприскувача</h2>
     
     <div class="info-box">
-        <strong>Конфігурація:</strong> Штанга 10м (20 форсунок, крок 50 см).
+        <strong>Конфігурація:</strong> Штанга 10м (20 форсунок, крок 50 см). 
     </div>
 
     <!-- КРОК 1 -->
     <div class="section-title">⚙️ Крок 1. Налаштування трактора</div>
     <div class="input-group">
         <label for="liters">Бажана норма виливу розчину (л/га):</label>
-        <input type="number" id="liters" placeholder="Наприклад: 150" min="1" max="500">
+        <input type="number" id="liters" placeholder="Введіть літри, наприклад: 200" min="1" max="500">
     </div>
 
-    <button onclick="calculateSettings()">РОЗРАХУВАТИ ШВИДКІСТЬ</button>
+    <button onclick="calculateSettings()">%РОЗРАХУВАТИ ШВИДКІСТЬ%</button>
 
     <div id="output" class="results"></div>
     
@@ -197,12 +197,12 @@
         
         <div class="input-group">
             <label for="hectares">Площа поля (гектарів, га):</label>
-            <input type="number" id="hectares" placeholder="Наприклад: 7.2" min="0.1" step="0.1" oninput="calculateTankMix()">
+            <input type="number" id="hectares" placeholder="Наприклад: 5.4" min="0.1" step="0.1" oninput="calculateTankMix()">
         </div>
         
         <div class="input-group">
             <label for="chemNorma">Норма препарату на 1 гектар (л/га або кг/га):</label>
-            <input type="number" id="chemNorma" placeholder="Наприклад: 1.5" min="0.01" step="0.01" oninput="calculateTankMix()">
+            <input type="number" id="chemNorma" placeholder="Наприклад: 2.0" min="0.01" step="0.01" oninput="calculateTankMix()">
         </div>
         
         <div class="output-grid">
@@ -236,8 +236,7 @@ function calculateSettings() {
     }
 
     currentNorma = normaTarget;
-    const vidstan = 10.0 / 20; 
-    const idealSpeed = 9.0; 
+    const vidstan = 10.0 / 20; // 0.5 м
 
     const baseNozzles = {
         "ЖОВТІ": {"ref_p": 2.5, "ref_q": 0.775},
@@ -246,43 +245,52 @@ function calculateSettings() {
 
     let vsiVarianty = [];
 
+    // Збираємо всі комбінації тиску від 1.5 до 4.5 бар
     for (let color in baseNozzles) {
         const data = baseNozzles[color];
         for (let p_int = 15; p_int <= 45; p_int++) {
             let p_test = p_int / 10.0;
             let q_precise = data.ref_q * Math.sqrt(p_test / data.ref_p);
             let speedNeeded = (q_precise * 600) / (vidstan * normaTarget);
-            let deviation = Math.abs(speedNeeded - idealSpeed);
             
+            // Нова система балів: тепер 8 км/год має найвищий пріоритет!
+            let score = 999;
+            
+            if (speedNeeded >= 7.5 && speedNeeded <= 8.5) {
+                // Ідеально для 8 км/год (Пріоритет №1)
+                score = Math.abs(speedNeeded - 8.0); 
+            } else if (speedNeeded >= 9.8 && speedNeeded <= 11.5) {
+                // Режим 10-11 км/год (Пріоритет №2)
+                score = Math.abs(speedNeeded - 10.5) + 10; 
+            } else if (speedNeeded < 7.5 && speedNeeded >= 3.0) {
+                // Режим меншої швидкості (Пріоритет №3)
+                score = (8.0 - speedNeeded) + 100; 
+            } else if (speedNeeded > 11.5 && speedNeeded <= 16.0) {
+                // Будь-яка вища швидкість (на самий крайній випадок)
+                score = (speedNeeded - 11.5) + 500;
+            }
+
             vsiVarianty.push({
                 color: color,
                 pressure: p_test,
                 flow: q_precise,
                 speed: speedNeeded,
-                dev: deviation
+                score: score
             });
         }
     }
 
-    vsiVarianty.sort((a, b) => a.dev - b.dev);
+    // Сортуємо: варіанти, найближчі до 8 км/год, автоматично стають першими
+    vsiVarianty.sort((a, b) => a.score - b.score);
 
-    let recommended = [];
-    vsiVarianty.forEach(v => {
-        if (v.speed >= 4.5 && v.speed <= 15.0 && recommended.length < 2) {
-            recommended.push(v);
-        }
-    });
-
-    if (recommended.length === 0) {
-        outputDiv.innerHTML = '<div class="error-message">⚠️ Не вдалося підібрати режими під швидкість 8-10 км/год. Спробуйте іншу норму виливу!</div>';
-        return;
-    }
+    // Відбираємо 2 найкращі варіанти
+    let recommended = vsiVarianty.slice(0, 2);
 
     let htmlContent = '';
     recommended.forEach((v, index) => {
         let cardClass = index === 0 ? 'card best' : 'card second';
         let badgeClass = index === 0 ? 'badge badge-best' : 'badge badge-second';
-        let badgeText = index === 0 ? '⭐ НАЙКРАЩИЙ РЕЖИМ' : '👍 ДРУГИЙ ВАРІАНТ';
+        let badgeText = index === 0 ? '⭐ РЕКОМЕНДОВАНИЙ РЕЖИМ' : '👍 ДРУГИЙ ВАРІАНТ';
 
         htmlContent += `
             <div class="${cardClass}">
@@ -291,13 +299,3 @@ function calculateSettings() {
                     <span class="${badgeClass}">${badgeText}</span>
                 </div>
                 <div class="data-row">
-                    <span class="data-label">Робочий тиск:</span>
-                    <span class="data-value">${v.pressure.toFixed(1)} бар</span>
-                </div>
-                <div class="data-row">
-                    <span class="data-label">Точна витрата:</span>
-                    <span class="data-value">${v.flow.toFixed(3)} л/хв</span>
-                </div>
-                <div class="data-row" style="margin-top: 10px; border-top: 1px dashed #ccc; padding-top: 8px;">
-                    <span class="data-label" style="color: #2c3e50; font-weight: bold;">ТРИМАТИ ШВИДКІСТЬ:</span>
-                    <span class="data-value speed-highlight">${v.speed.toFixed(2)} км/год</span>
