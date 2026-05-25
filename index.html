@@ -156,7 +156,7 @@
     <h2>Розрахунок Обприскувача</h2>
     
     <div class="info-box">
-        <strong>Конфігурація:</strong> Штанга 10м (20 форсунок, крок 50 см).
+        <strong>Конфігурація:</strong> Штанга 10м (20 форсунок, крок 50 см). 
     </div>
 
     <div class="input-group">
@@ -227,7 +227,6 @@ function calculateSettings() {
 
     vsiVarianty.sort((a, b) => a.dev - b.dev);
 
-    // Відбираємо чітко ТОП-2 найкращих варіанти
     let recommended = [];
     vsiVarianty.forEach(v => {
         if (v.speed >= 4.5 && v.speed <= 15.0 && recommended.length < 2) {
@@ -254,7 +253,7 @@ function calculateSettings() {
                 </div>
                 <div class="data-row">
                     <span class="data-label">Робочий тиск:</span>
-                    <span class="data-value">${v.pressure.toFixed(1)} Legal бар</span>
+                    <span class="data-value">${v.pressure.toFixed(1)} бар</span>
                 </div>
                 <div class="data-row">
                     <span class="data-label">Точна витрата:</span>
