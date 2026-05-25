@@ -17,7 +17,7 @@
         .b2 { background: #fef9e7; border-left: 5px solid #f1c40f; }
         .row { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 15px; }
         .val { font-weight: bold; color: #2c3e50; }
-        .shv { font-size: 18px; color: #c0392b; font-weight: bold; }
+        .shv { font-size: 18px; color: #2ecc71; font-weight: bold; }
         .tank { margin-top: 20px; padding: 15px; background: #f8f9fa; border: 2px dashed #3498db; border-radius: 12px; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
         .tile { background: #fff; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #dcdde1; }
@@ -32,7 +32,7 @@
     
     <label>Бажана норма виливу (л/га):</label>
     <input type="number" id="liters" placeholder="Наприклад: 150">
-    <button onclick="calc()">РОЗРАХУВАТИ ШВИДКІСТЬ</button>
+    <button onclick="calc()">РОЗРАХУВАТИ ТИСК</button>
     
     <div id="output"></div>
     
@@ -55,26 +55,36 @@ function calc() {
     var n = parseFloat(document.getElementById('liters').value);
     if (!n || n <= 0) { alert('Введіть літри!'); return; }
     curN = n;
-    var res = [], f = {"ЖОВТІ": 0.775, "СИНІ": 1.250};
+    
+    // Розраховуємо необхідний хвилинний вилив на 1 форсунку для швидкості рівно 8 км/год
+    // Формула: q = (Q * B * V) / 600. Де B = 0.5м, V = 8 км/год. Скорочується до: q = (Q * 4) / 600
+    var targetQ = (n * 0.5 * 8) / 600; 
+    
+    var f = {"ЖОВТІ": 0.775, "СИНІ": 1.250}, res = [];
+    
     for (var col in f) {
-        for (var p = 15; p <= 45; p++) {
-            var bar = p / 10, q = f[col] * Math.sqrt(bar / 2.5), v = (q * 600) / (0.5 * n), sc = 999;
-            if (v >= 7.5 && v <= 8.5) sc = Math.abs(v - 8);
-            else if (v >= 9.8 && v <= 11.5) sc = Math.abs(v - 10.5) + 10;
-            else if (v < 7.5 && v >= 3) sc = (8 - v) + 100;
-            else if (v > 11.5 && v <= 16) sc = (v - 11.5) + 500;
-            res.push({c:col, p:bar, q:q, v:v, sc:sc});
+        // За законом Бернуллі вираховуємо точний тиск під потрібний розхід: P = 2.5 * (targetQ / ref_q)^2
+        var exactBar = 2.5 * Math.pow((targetQ / f[col]), 2);
+        
+        // Показуємо режим лише якщо тиск вписується в реальні межі обприскувача (від 1.0 до 5.0 бар)
+        if (exactBar >= 1.0 && exactBar <= 5.0) {
+            res.push({c: col, p: exactBar, q: targetQ, v: 8.0});
         }
     }
-    res.sort(function(a,b){return a.sc - b.sc;});
-    var top = res.slice(0,2), html = '';
-    top.forEach(function(x, i){
-        var cls = i === 0 ? 'card b1' : 'card b2', txt = i === 0 ? '⭐ РЕКОМЕНДОВАНО' : '👍 ВАРІАНТ 2';
-        html += '<div class="'+cls+'"><div class="row"><span style="font-weight:bold">'+x.c+' форсунки</span><span style="font-size:12px;font-weight:bold">'+txt+'</span></div>' +
-            '<div class="row"><span>Тиск:</span><span class="val">'+x.p.toFixed(1)+' бар</span></div>' +
-            '<div class="row"><span>Витрата:</span><span class="val">'+x.q.toFixed(3)+' л/хв</span></div>' +
-            '<div class="row" style="margin-top:8px;border-top:1px dashed #ccc;padding-top:5px;"><span>ШВИДКІСТЬ:</span><span class="shv">'+x.v.toFixed(2)+' км/год</span></div></div>';
-    });
+    
+    var html = '';
+    if (res.length === 0) {
+        html = '<div style="color:#e74c3c;font-weight:bold;text-align:center;padding:10px;">⚠️ Для такої норми на швидкості 8 км/год потрібен інший тип форсунок (червоні/інші).</div>';
+    } else {
+        res.forEach(function(x, i){
+            var cls = i === 0 ? 'card b1' : 'card b2', txt = i === 0 ? '⭐ ВАРІАНТ 1' : '👍 ВАРІАНТ 2';
+            html += '<div class="'+cls+'"><div class="row"><span style="font-weight:bold">'+x.c+' форсунки</span><span style="font-size:12px;font-weight:bold">'+txt+'</span></div>' +
+                '<div class="row"><span>Необхідний тиск:</span><span class="val" style="color:#c0392b;font-size:16px;">'+x.p.toFixed(2)+' бар</span></div>' +
+                '<div class="row"><span>Витрата форсунки:</span><span class="val">'+x.q.toFixed(3)+' л/хв</span></div>' +
+                '<div class="row" style="margin-top:8px;border-top:1px dashed #ccc;padding-top:5px;"><span>РОБОЧА ШВИДКІСТЬ:</span><span class="shv">'+x.v.toFixed(1)+' км/год</span></div></div>';
+        });
+    }
+    
     document.getElementById('output').innerHTML = html;
     document.getElementById('ha').value = ''; document.getElementById('chem').value = '';
     document.getElementById('voda').innerHTML = '0 л'; document.getElementById('him').innerHTML = '0 л/кг';
