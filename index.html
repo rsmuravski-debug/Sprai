@@ -125,6 +125,30 @@
             font-weight: bold;
             margin-top: 15px;
         }
+        .area-calc-box {
+            margin-top: 25px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border: 2px dashed #95a5a6;
+            border-radius: 12px;
+        }
+        .area-title {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 16px;
+            text-align: center;
+        }
+        .total-water-highlight {
+            font-size: 22px;
+            color: #2980b9;
+            font-weight: bold;
+            text-align: center;
+            margin-top: 12px;
+            background: #e1f5fe;
+            padding: 10px;
+            border-radius: 8px;
+        }
     </style>
 </head>
 <body>
@@ -133,7 +157,7 @@
     <h2>Розрахунок Обприскувача</h2>
     
     <div class="info-box">
-        <strong>Конфігурація:</strong> Штанга 10м (20 форсунок, крок 50 см).
+        <strong>Конфігурація:</strong> Штанга 10м (20 форсунок, крок 50 см). Розрахунок базується на ваших точних польових замірах.
     </div>
 
     <div class="input-group">
@@ -144,13 +168,29 @@
     <button onclick="calculateSettings()">РОЗРАХУВАТИ РЕЖИМ</button>
 
     <div id="output" class="results"></div>
+    
+    <!-- Новий блок для прорахунку гектарів, за замовчуванням прихований -->
+    <div id="areaBox" class="area-calc-box" style="display: none;">
+        <div class="area-title">💧 Розрахунок води на площу поля</div>
+        <div class="input-group" style="margin-bottom: 10px;">
+            <label for="hectares" style="font-size: 14px; font-weight: normal;">Введіть площу поля (в гектарах):</label>
+            <input type="number" id="hectares" placeholder="Наприклад: 4.5" min="0.1" step="0.1" oninput="calculateTotalWater()">
+        </div>
+        <div id="totalWaterResult" class="total-water-highlight">Потрібно води: 0 л</div>
+    </div>
 </div>
 
 <script>
+// Глобальна змінна для збереження поточної норми
+let currentNorma = 0;
+
 function calculateSettings() {
     const inputField = document.getElementById('liters');
     const outputDiv = document.getElementById('output');
+    const areaBox = document.getElementById('areaBox');
+    
     outputDiv.innerHTML = '';
+    areaBox.style.display = 'none'; // Ховаємо розрахунок гектарів перед новим пошуком
 
     const normaTarget = parseFloat(inputField.value);
     if (!normaTarget || normaTarget <= 0) {
@@ -158,10 +198,10 @@ function calculateSettings() {
         return;
     }
 
-    const vidstan = 10.0 / 20; // 0.5 метра
+    currentNorma = normaTarget; // Запам'ятовуємо норму для наступного кроку
+    const vidstan = 10.0 / 20; 
     const idealSpeed = 9.0;
 
-    // Ваші точні дані з фото
     const myFixedData = {
         "ЖОВТІ": [
             {"p": 2.0, "q": 0.625},
@@ -177,7 +217,6 @@ function calculateSettings() {
 
     let vsiVarianty = [];
 
-    // Обчислення варіантів
     for (let color in myFixedData) {
         myFixedData[color].forEach(m => {
             let speedNeeded = (m.q * 600) / (vidstan * normaTarget);
@@ -193,10 +232,8 @@ function calculateSettings() {
         });
     }
 
-    // Сортування (ближче до 9 км/год — вище)
     vsiVarianty.sort((a, b) => a.dev - b.dev);
 
-    // Відбір топ-2 варіантів у межах розумних швидкостей
     let recommended = [];
     vsiVarianty.forEach(v => {
         if (v.speed >= 5.0 && v.speed <= 13.5 && recommended.length < 2) {
@@ -209,7 +246,6 @@ function calculateSettings() {
         return;
     }
 
-    // Виведення результатів на екран телефону
     let htmlContent = '';
     recommended.forEach((v, index) => {
         let cardClass = index === 0 ? 'card best' : 'card second';
@@ -239,6 +275,28 @@ function calculateSettings() {
     });
 
     outputDiv.innerHTML = htmlContent;
+    
+    // Показуємо блок для введення гектарів та скидаємо його попереднє значення
+    document.getElementById('hectares').value = '';
+    document.getElementById('totalWaterResult').innerHTML = 'Потрібно води: 0 л';
+    areaBox.style.display = 'block';
+}
+
+// Функція для миттєвого підрахунку літражу на площу поля
+function calculateTotalWater() {
+    const hectaresField = document.getElementById('hectares');
+    const resultDiv = document.getElementById('totalWaterResult');
+    
+    const hectares = parseFloat(hectaresField.value);
+    
+    if (!hectares || hectares <= 0) {
+        resultDiv.innerHTML = 'Потрібно води: 0 л';
+        return;
+    }
+    
+    // Множимо введені гектари на вибрану раніше норму л/га
+    const totalWater = hectares * currentNorma;
+    resultDiv.innerHTML = `💧 Потрібно води: ${totalWater.toFixed(0)} л`;
 }
 </script>
 
