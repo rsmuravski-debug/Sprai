@@ -177,7 +177,7 @@
     <h2>Розрахунок Обприскувача</h2>
     
     <div class="info-box">
-        <strong>Конфігурація:</strong> Штанга 10м (20 форсунок, крок 50 см). 
+        <strong>Конфігурація:</strong> Штанга 10м (20 форсунок, крок 50 см).
     </div>
 
     <!-- КРОК 1 -->
@@ -187,7 +187,7 @@
         <input type="number" id="liters" placeholder="Введіть літри, наприклад: 200" min="1" max="500">
     </div>
 
-    <button onclick="calculateSettings()">%РОЗРАХУВАТИ ШВИДКІСТЬ%</button>
+    <button onclick="calculateSettings()">РОЗРАХУВАТИ ШВИДКІСТЬ</button>
 
     <div id="output" class="results"></div>
     
@@ -236,7 +236,7 @@ function calculateSettings() {
     }
 
     currentNorma = normaTarget;
-    const vidstan = 10.0 / 20; // 0.5 м
+    const vidstan = 10.0 / 20; 
 
     const baseNozzles = {
         "ЖОВТІ": {"ref_p": 2.5, "ref_q": 0.775},
@@ -245,7 +245,6 @@ function calculateSettings() {
 
     let vsiVarianty = [];
 
-    // Збираємо всі комбінації тиску від 1.5 до 4.5 бар
     for (let color in baseNozzles) {
         const data = baseNozzles[color];
         for (let p_int = 15; p_int <= 45; p_int++) {
@@ -253,20 +252,15 @@ function calculateSettings() {
             let q_precise = data.ref_q * Math.sqrt(p_test / data.ref_p);
             let speedNeeded = (q_precise * 600) / (vidstan * normaTarget);
             
-            // Нова система балів: тепер 8 км/год має найвищий пріоритет!
             let score = 999;
             
             if (speedNeeded >= 7.5 && speedNeeded <= 8.5) {
-                // Ідеально для 8 км/год (Пріоритет №1)
                 score = Math.abs(speedNeeded - 8.0); 
             } else if (speedNeeded >= 9.8 && speedNeeded <= 11.5) {
-                // Режим 10-11 км/год (Пріоритет №2)
                 score = Math.abs(speedNeeded - 10.5) + 10; 
             } else if (speedNeeded < 7.5 && speedNeeded >= 3.0) {
-                // Режим меншої швидкості (Пріоритет №3)
                 score = (8.0 - speedNeeded) + 100; 
             } else if (speedNeeded > 11.5 && speedNeeded <= 16.0) {
-                // Будь-яка вища швидкість (на самий крайній випадок)
                 score = (speedNeeded - 11.5) + 500;
             }
 
@@ -280,10 +274,8 @@ function calculateSettings() {
         }
     }
 
-    // Сортуємо: варіанти, найближчі до 8 км/год, автоматично стають першими
     vsiVarianty.sort((a, b) => a.score - b.score);
 
-    // Відбираємо 2 найкращі варіанти
     let recommended = vsiVarianty.slice(0, 2);
 
     let htmlContent = '';
@@ -299,3 +291,11 @@ function calculateSettings() {
                     <span class="${badgeClass}">${badgeText}</span>
                 </div>
                 <div class="data-row">
+                    <span class="data-label">Робочий тиск:</span>
+                    <span class="data-value">${v.pressure.toFixed(1)} бар</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">Точна витрата:</span>
+                    <span class="data-value">${v.flow.toFixed(3)} л/хв</span>
+                </div>
+                <div class="data-row" style="margin-top: 10px; border-top: 1px dashed #ccc; padding-top: 8px;">
