@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Калькулятор Обприскувача</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f6f9;
+            color: #333;
+            margin: 0;
+            padding: 15px;
+        }
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+        }
+        h2 {
+            text-align: center;
+            color: #2c3e50;
+            margin-top: 0;
+            font-size: 22px;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        .info-box {
+            background-color: #e8f4fd;
+            border-left: 4px solid #3498db;
+            padding: 10px;
+            font-size: 13px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #34495e;
+            font-size: 16px;
+        }
+        input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            font-size: 18px;
+            border: 2px solid #bdc3c7;
+            border-radius: 8px;
+            box-sizing: border-box;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        input[type="number"]:focus {
+            border-color: #3498db;
+        }
+        button {
+            width: 100%;
+            background-color: #2ecc71;
+            color: white;
+            border: none;
+            padding: 14px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 3px 6px rgba(46, 204, 113, 0.3);
+        }
+        button:active {
+            background-color: #27ae60;
+        }
+        .results {
+            margin-top: 25px;
+        }
+        .card {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #e0e0e0;
+        }
+        .best {
+            background-color: #ebf9eb;
+            border-left: 5px solid #2ecc71;
+        }
+        .second {
+            background-color: #fef9e7;
+            border-left: 5px solid #f1c40f;
+        }
+        .card-title {
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .badge {
+            font-size: 11px;
+            padding: 3px 7px;
+            border-radius: 10px;
+            color: white;
+        }
+        .badge-best { background-color: #2ecc71; }
+        .badge-second { background-color: #f1c40f; color: #333; }
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            font-size: 15px;
+        }
+        .data-label { color: #7f8c8d; }
+        .data-value { font-weight: 600; color: #2c3e50; }
+        .speed-highlight {
+            font-size: 18px;
+            color: #c0392b;
+            font-weight: bold;
+        }
+        .error-message {
+            color: #e74c3c;
+            text-align: center;
+            font-weight: bold;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Розрахунок Обприскувача</h2>
+    
+    <div class="info-box">
+        <strong>Конфігурація:</strong> Штанга 10м (20 форсунок, крок 50 см). Розрахунок базується на ваших точних польових замірах.
+    </div>
+
+    <div class="input-group">
+        <label for="liters">Бажана норма виливу (л/га):</label>
+        <input type="number" id="liters" placeholder="Наприклад: 150" min="1" max="500">
+    </div>
+
+    <button onclick="calculateSettings()">РОЗРАХУВАТИ РЕЖИМ</button>
+
+    <div id="output" class="results"></div>
+</div>
+
+<script>
+function calculateSettings() {
+    const inputField = document.getElementById('liters');
+    const outputDiv = document.getElementById('output');
+    outputDiv.innerHTML = '';
+
+    const normaTarget = parseFloat(inputField.value);
+    if (!normaTarget || normaTarget <= 0) {
+        outputDiv.innerHTML = '<div class="error-message">❌ Будь ласка, введіть коректну кількість літрів!</div>';
+        return;
+    }
+
+    const vidstan = 10.0 / 20; // 0.5 метра
+    const idealSpeed = 9.0;
+
+    // Ваші точні дані з фото
+    const myFixedData = {
+        "ЖОВТІ": [
+            {"p": 2.0, "q": 0.625},
+            {"p": 2.5, "q": 0.775},
+            {"p": 3.0, "q": 0.875}
+        ],
+        "СИНІ": [
+            {"p": 2.0, "q": 1.125},
+            {"p": 2.5, "q": 1.250},
+            {"p": 3.0, "q": 1.350}
+        ]
+    };
+
+    let vsiVarianty = [];
+
+    // Обчислення варіантів
+    for (let color in myFixedData) {
+        myFixedData[color].forEach(m => {
+            let speedNeeded = (m.q * 600) / (vidstan * normaTarget);
+            let deviation = Math.abs(speedNeeded - idealSpeed);
+            
+            vsiVarianty.push({
+                color: color,
+                pressure: m.p,
+                flow: m.q,
+                speed: speedNeeded,
+                dev: deviation
+            });
+        });
+    }
+
+    // Сортування (ближче до 9 км/год — вище)
+    vsiVarianty.sort((a, b) => a.dev - b.dev);
+
+    // Відбір топ-2 варіантів у межах розумних швидкостей
+    let recommended = [];
+    vsiVarianty.forEach(v => {
+        if (v.speed >= 5.0 && v.speed <= 13.5 && recommended.length < 2) {
+            recommended.push(v);
+        }
+    });
+
+    if (recommended.length === 0) {
+        outputDiv.innerHTML = '<div class="error-message">⚠️ На ваших режимах форсунок неможливо підібрати адекватну швидкість трактора для такої норми виливу!</div>';
+        return;
+    }
+
+    // Виведення результатів на екран телефону
+    let htmlContent = '';
+    recommended.forEach((v, index) => {
+        let cardClass = index === 0 ? 'card best' : 'card second';
+        let badgeClass = index === 0 ? 'badge badge-best' : 'badge badge-second';
+        let badgeText = index === 0 ? '⭐ НАЙКРАЩИЙ РЕЖИМ' : '👍 ДРУГИЙ ВАРІАНТ';
+
+        htmlContent += `
+            <div class="${cardClass}">
+                <div class="card-title">
+                    <span>${v.color} форсунки</span>
+                    <span class="${badgeClass}">${badgeText}</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">Робочий тиск:</span>
+                    <span class="data-value">${v.pressure.toFixed(1)} бар</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">Витрата розпилювача:</span>
+                    <span class="data-value">${v.flow.toFixed(3)} л/хв</span>
+                </div>
+                <div class="data-row" style="margin-top: 10px; border-top: 1px dashed #ccc; padding-top: 8px;">
+                    <span class="data-label" style="color: #2c3e50; font-weight: bold;">ШВИДКІСТЬ ТРАКТОРА:</span>
+                    <span class="data-value speed-highlight">${v.speed.toFixed(2)} км/год</span>
+                </div>
+            </div>
+        `;
+    });
+
+    outputDiv.innerHTML = htmlContent;
+}
+</script>
+
+</body>
+</html>
