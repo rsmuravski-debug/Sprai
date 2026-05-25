@@ -54,7 +54,6 @@
             border-radius: 8px;
             box-sizing: border-box;
             outline: none;
-            transition: border-color 0.2s;
         }
         input[type="number"]:focus {
             border-color: #3498db;
@@ -197,15 +196,14 @@ function calculateSettings() {
 
     const normaTarget = parseFloat(inputField.value);
     if (!normaTarget || normaTarget <= 0) {
-        outputDiv.innerHTML = '<div class="error-message">❌ Будь ласка, введіть коректну кількість літрів!</div>';
+        outputDiv.innerHTML = '<div class="error-message">\u274c Будь ласка, введіть коректну кількість літрів!</div>';
         return;
     }
 
     currentNorma = normaTarget;
-    const vidstan = 10.0 / 20; // 0.5 м
-    const idealSpeed = 9.0; // Середина діапазону 8-10 км/год
+    const vidstan = 10.0 / 20; 
+    const idealSpeed = 9.0; 
 
-    // Ваші базові еталонні точки калібрування з фото
     const baseNozzles = {
         "ЖОВТІ": {"ref_p": 2.5, "ref_q": 0.775},
         "СИНІ":  {"ref_p": 2.5, "ref_q": 1.250}
@@ -213,17 +211,12 @@ function calculateSettings() {
 
     let vsiVarianty = [];
 
-    // Глибокий перебір розширеного діапазону тиску від 1.5 до 4.5 бар з кроком 0.1
     for (let color in baseNozzles) {
         const data = baseNozzles[color];
         
         for (let p_int = 15; p_int <= 45; p_int++) {
             let p_test = p_int / 10.0;
-            
-            // Формула Бернуллі для ультраточного проміжного розходу
             let q_precise = data.ref_q * Math.sqrt(p_test / data.ref_p);
-            
-            // Розрахунок швидкості під цей тиск
             let speedNeeded = (q_precise * 600) / (vidstan * normaTarget);
             let deviation = Math.abs(speedNeeded - idealSpeed);
             
@@ -237,20 +230,17 @@ function calculateSettings() {
         }
     }
 
-    // Сортуємо: чим ближче швидкість до 8-10 км/год, тим вище варіант у списку
     vsiVarianty.sort((a, b) => a.dev - b.dev);
 
-    // Відбираємо ТОП-3 найкращих варіанти
     let recommended = [];
     vsiVarianty.forEach(v => {
-        // Залишаємо варіанти, де швидкість в адекватних межах і немає дублікатів по швидкості
         if (v.speed >= 4.5 && v.speed <= 15.0 && recommended.length < 3) {
             recommended.push(v);
         }
     });
 
     if (recommended.length === 0) {
-        outputDiv.innerHTML = '<div class="error-message">⚠️ Не вдалося підібрати режими під швидкість 8-10 км/год. Спробуйте іншу норму виливу!</div>';
+        outputDiv.innerHTML = '<div class="error-message">\u26a0\ufe0f Не вдалося підібрати режими під швидкість 8-10 км/год. Спробуйте іншу норму виливу!</div>';
         return;
     }
 
@@ -258,16 +248,16 @@ function calculateSettings() {
     recommended.forEach((v, index) => {
         let cardClass = 'card other';
         let badgeClass = 'badge badge-other';
-        let badgeText = '👍 ВАРІАНТ №3';
+        let badgeText = '\ud83d\udc4d ВАРІАНТ \u21163';
 
         if (index === 0) {
             cardClass = 'card best';
             badgeClass = 'badge badge-best';
-            badgeText = '⭐ НАЙКРАЩИЙ РЕЖИМ';
+            badgeText = '\u2b50 НАЙКРАЩИЙ РЕЖИМ';
         } else if (index === 1) {
             cardClass = 'card second';
             badgeClass = 'badge badge-second';
-            badgeText = '👍 ВАРІАНТ №2';
+            badgeText = '\ud83d\udc4d ВАРІАНТ \u21162';
         }
 
         htmlContent += `
@@ -300,3 +290,19 @@ function calculateSettings() {
 }
 
 function calculateTotalWater() {
+    const hectaresField = document.getElementById('hectares');
+    const resultDiv = document.getElementById('totalWaterResult');
+    const hectares = parseFloat(hectaresField.value);
+    
+    if (!hectares || hectares <= 0) {
+        resultDiv.innerHTML = 'Потрібно води: 0 л';
+        return;
+    }
+    
+    const totalWater = hectares * currentNorma;
+    resultDiv.innerHTML = `\ud83d\udca7 Потрібно води: ${totalWater.toFixed(0)} л`;
+}
+</script>
+
+</body>
+</html>
