@@ -91,6 +91,10 @@
             background-color: #fef9e7;
             border-left: 5px solid #f1c40f;
         }
+        .other {
+            background-color: #fcfcfc;
+            border-left: 5px solid #95a5a6;
+        }
         .card-title {
             font-weight: bold;
             font-size: 16px;
@@ -106,6 +110,7 @@
         }
         .badge-best { background-color: #2ecc71; }
         .badge-second { background-color: #f1c40f; color: #333; }
+        .badge-other { background-color: #95a5a6; }
         .data-row {
             display: flex;
             justify-content: space-between;
@@ -157,7 +162,7 @@
     <h2>Розрахунок Обприскувача</h2>
     
     <div class="info-box">
-        <strong>Конфігурація:</strong> Штанга 10м (20 форсунок, крок 50 см).
+        <strong>Конфігурація:</strong> Штанга 10м (20 форсунок, крок 50 см). 
     </div>
 
     <div class="input-group">
@@ -169,7 +174,6 @@
 
     <div id="output" class="results"></div>
     
-    <!-- Новий блок для прорахунку гектарів, за замовчуванням прихований -->
     <div id="areaBox" class="area-calc-box" style="display: none;">
         <div class="area-title">💧 Розрахунок води на площу поля</div>
         <div class="input-group" style="margin-bottom: 10px;">
@@ -181,7 +185,6 @@
 </div>
 
 <script>
-// Глобальна змінна для збереження поточної норми
 let currentNorma = 0;
 
 function calculateSettings() {
@@ -190,7 +193,7 @@ function calculateSettings() {
     const areaBox = document.getElementById('areaBox');
     
     outputDiv.innerHTML = '';
-    areaBox.style.display = 'none'; // Ховаємо розрахунок гектарів перед новим пошуком
+    areaBox.style.display = 'none';
 
     const normaTarget = parseFloat(inputField.value);
     if (!normaTarget || normaTarget <= 0) {
@@ -198,59 +201,74 @@ function calculateSettings() {
         return;
     }
 
-    currentNorma = normaTarget; // Запам'ятовуємо норму для наступного кроку
-    const vidstan = 10.0 / 20; 
-    const idealSpeed = 9.0;
+    currentNorma = normaTarget;
+    const vidstan = 10.0 / 20; // 0.5 м
+    const idealSpeed = 9.0; // Середина діапазону 8-10 км/год
 
-    const myFixedData = {
-        "ЖОВТІ": [
-            {"p": 2.0, "q": 0.625},
-            {"p": 2.5, "q": 0.775},
-            {"p": 3.0, "q": 0.875}
-        ],
-        "СИНІ": [
-            {"p": 2.0, "q": 1.125},
-            {"p": 2.5, "q": 1.250},
-            {"p": 3.0, "q": 1.350}
-        ]
+    // Ваші базові еталонні точки калібрування з фото
+    const baseNozzles = {
+        "ЖОВТІ": {"ref_p": 2.5, "ref_q": 0.775},
+        "СИНІ":  {"ref_p": 2.5, "ref_q": 1.250}
     };
 
     let vsiVarianty = [];
 
-    for (let color in myFixedData) {
-        myFixedData[color].forEach(m => {
-            let speedNeeded = (m.q * 600) / (vidstan * normaTarget);
+    // Глибокий перебір розширеного діапазону тиску від 1.5 до 4.5 бар з кроком 0.1
+    for (let color in baseNozzles) {
+        const data = baseNozzles[color];
+        
+        for (let p_int = 15; p_int <= 45; p_int++) {
+            let p_test = p_int / 10.0;
+            
+            // Формула Бернуллі для ультраточного проміжного розходу
+            let q_precise = data.ref_q * Math.sqrt(p_test / data.ref_p);
+            
+            // Розрахунок швидкості під цей тиск
+            let speedNeeded = (q_precise * 600) / (vidstan * normaTarget);
             let deviation = Math.abs(speedNeeded - idealSpeed);
             
             vsiVarianty.push({
                 color: color,
-                pressure: m.p,
-                flow: m.q,
+                pressure: p_test,
+                flow: q_precise,
                 speed: speedNeeded,
                 dev: deviation
             });
-        });
+        }
     }
 
+    // Сортуємо: чим ближче швидкість до 8-10 км/год, тим вище варіант у списку
     vsiVarianty.sort((a, b) => a.dev - b.dev);
 
+    // Відбираємо ТОП-3 найкращих варіанти
     let recommended = [];
     vsiVarianty.forEach(v => {
-        if (v.speed >= 5.0 && v.speed <= 13.5 && recommended.length < 2) {
+        // Залишаємо варіанти, де швидкість в адекватних межах і немає дублікатів по швидкості
+        if (v.speed >= 4.5 && v.speed <= 15.0 && recommended.length < 3) {
             recommended.push(v);
         }
     });
 
     if (recommended.length === 0) {
-        outputDiv.innerHTML = '<div class="error-message">⚠️ На ваших режимах форсунок неможливо підібрати адекватну швидкість трактора для такої норми виливу!</div>';
+        outputDiv.innerHTML = '<div class="error-message">⚠️ Не вдалося підібрати режими під швидкість 8-10 км/год. Спробуйте іншу норму виливу!</div>';
         return;
     }
 
     let htmlContent = '';
     recommended.forEach((v, index) => {
-        let cardClass = index === 0 ? 'card best' : 'card second';
-        let badgeClass = index === 0 ? 'badge badge-best' : 'badge badge-second';
-        let badgeText = index === 0 ? '⭐ НАЙКРАЩИЙ РЕЖИМ' : '👍 ДРУГИЙ ВАРІАНТ';
+        let cardClass = 'card other';
+        let badgeClass = 'badge badge-other';
+        let badgeText = '👍 ВАРІАНТ №3';
+
+        if (index === 0) {
+            cardClass = 'card best';
+            badgeClass = 'badge badge-best';
+            badgeText = '⭐ НАЙКРАЩИЙ РЕЖИМ';
+        } else if (index === 1) {
+            cardClass = 'card second';
+            badgeClass = 'badge badge-second';
+            badgeText = '👍 ВАРІАНТ №2';
+        }
 
         htmlContent += `
             <div class="${cardClass}">
@@ -263,11 +281,11 @@ function calculateSettings() {
                     <span class="data-value">${v.pressure.toFixed(1)} бар</span>
                 </div>
                 <div class="data-row">
-                    <span class="data-label">Витрата розпилювача:</span>
+                    <span class="data-label">Точна витрата:</span>
                     <span class="data-value">${v.flow.toFixed(3)} л/хв</span>
                 </div>
                 <div class="data-row" style="margin-top: 10px; border-top: 1px dashed #ccc; padding-top: 8px;">
-                    <span class="data-label" style="color: #2c3e50; font-weight: bold;">ШВИДКІСТЬ ТРАКТОРА:</span>
+                    <span class="data-label" style="color: #2c3e50; font-weight: bold;">ТРИМАТИ ШВИДКІСТЬ:</span>
                     <span class="data-value speed-highlight">${v.speed.toFixed(2)} км/год</span>
                 </div>
             </div>
@@ -276,29 +294,9 @@ function calculateSettings() {
 
     outputDiv.innerHTML = htmlContent;
     
-    // Показуємо блок для введення гектарів та скидаємо його попереднє значення
     document.getElementById('hectares').value = '';
     document.getElementById('totalWaterResult').innerHTML = 'Потрібно води: 0 л';
     areaBox.style.display = 'block';
 }
 
-// Функція для миттєвого підрахунку літражу на площу поля
 function calculateTotalWater() {
-    const hectaresField = document.getElementById('hectares');
-    const resultDiv = document.getElementById('totalWaterResult');
-    
-    const hectares = parseFloat(hectaresField.value);
-    
-    if (!hectares || hectares <= 0) {
-        resultDiv.innerHTML = 'Потрібно води: 0 л';
-        return;
-    }
-    
-    // Множимо введені гектари на вибрану раніше норму л/га
-    const totalWater = hectares * currentNorma;
-    resultDiv.innerHTML = `💧 Потрібно води: ${totalWater.toFixed(0)} л`;
-}
-</script>
-
-</body>
-</html>
