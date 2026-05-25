@@ -2,298 +2,93 @@
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Калькулятор Обприскувача</title>
     <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: #f4f6f9;
-            color: #333;
-            margin: 0;
-            padding: 15px;
-        }
-        .container {
-            max-width: 500px;
-            margin: 0 auto;
-            background: #ffffff;
-            padding: 20px;
-            border-radius: 15px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
-        }
-        h2 {
-            text-align: center;
-            color: #2c3e50;
-            margin-top: 0;
-            font-size: 22px;
-            border-bottom: 2px solid #3498db;
-            padding-bottom: 10px;
-        }
-        .info-box {
-            background-color: #e8f4fd;
-            border-left: 4px solid #3498db;
-            padding: 10px;
-            font-size: 13px;
-            border-radius: 4px;
-            margin-bottom: 20px;
-        }
-        .section-title {
-            font-size: 18px;
-            font-weight: bold;
-            color: #2c3e50;
-            margin-top: 10px;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .input-group {
-            margin-bottom: 15px;
-        }
-        label {
-            display: block;
-            font-weight: bold;
-            margin-bottom: 6px;
-            color: #34495e;
-            font-size: 15px;
-        }
-        input[type="number"] {
-            width: 100%;
-            padding: 12px;
-            font-size: 18px;
-            border: 2px solid #bdc3c7;
-            border-radius: 8px;
-            box-sizing: border-box;
-            outline: none;
-        }
-        input[type="number"]:focus {
-            border-color: #3498db;
-        }
-        button {
-            width: 100%;
-            background-color: #2ecc71;
-            color: white;
-            border: none;
-            padding: 14px;
-            font-size: 18px;
-            font-weight: bold;
-            border-radius: 8px;
-            cursor: pointer;
-            box-shadow: 0 3px 6px rgba(46, 204, 113, 0.3);
-            margin-bottom: 10px;
-        }
-        button:active {
-            background-color: #27ae60;
-        }
-        .results {
-            margin-top: 20px;
-        }
-        .card {
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 15px;
-            border: 1px solid #e0e0e0;
-        }
-        .best {
-            background-color: #ebf9eb;
-            border-left: 5px solid #2ecc71;
-        }
-        .second {
-            background-color: #fef9e7;
-            border-left: 5px solid #f1c40f;
-        }
-        .card-title {
-            font-weight: bold;
-            font-size: 16px;
-            margin-bottom: 8px;
-            display: flex;
-            justify-content: space-between;
-        }
-        .badge {
-            font-size: 11px;
-            padding: 3px 7px;
-            border-radius: 10px;
-            color: white;
-        }
-        .badge-best { background-color: #2ecc71; }
-        .badge-second { background-color: #f1c40f; color: #333; }
-        .data-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 6px;
-            font-size: 15px;
-        }
-        .data-label { color: #7f8c8d; }
-        .data-value { font-weight: 600; color: #2c3e50; }
-        .speed-highlight {
-            font-size: 18px;
-            color: #c0392b;
-            font-weight: bold;
-        }
-        .error-message {
-            color: #e74c3c;
-            text-align: center;
-            font-weight: bold;
-            margin-top: 15px;
-        }
-        .tank-calc-box {
-            margin-top: 25px;
-            padding: 18px;
-            background-color: #f8f9fa;
-            border: 2px dashed #3498db;
-            border-radius: 12px;
-        }
-        .output-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-top: 15px;
-        }
-        .output-tile {
-            background: #ffffff;
-            padding: 12px;
-            border-radius: 8px;
-            text-align: center;
-            border: 1px solid #dcdde1;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-        }
-        .tile-label {
-            font-size: 12px;
-            color: #7f8c8d;
-            text-transform: uppercase;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-        .tile-value {
-            font-size: 20px;
-            font-weight: bold;
-        }
-        .water-text { color: #2980b9; }
-        .chem-text { color: #e67e22; }
+        body { font-family: system-ui; background: #f4f6f9; padding: 15px; color: #333; }
+        .box { max-width: 480px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); }
+        h2 { text-align: center; color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 8px; }
+        .info { background: #e8f4fd; border-left: 4px solid #3498db; padding: 10px; font-size: 13px; border-radius: 4px; margin-bottom: 15px; }
+        label { display: block; font-weight: bold; margin: 10px 0 5px; font-size: 15px; }
+        input { width: 100%; padding: 12px; font-size: 18px; border: 2px solid #bdc3c7; border-radius: 8px; box-sizing: border-box; }
+        button { width: 100%; background: #2ecc71; color: #fff; border: none; padding: 14px; font-size: 18px; font-weight: bold; border-radius: 8px; margin: 15px 0; cursor: pointer; }
+        .card { padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #e0e0e0; }
+        .b1 { background: #ebf9eb; border-left: 5px solid #2ecc71; }
+        .b2 { background: #fef9e7; border-left: 5px solid #f1c40f; }
+        .row { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 15px; }
+        .val { font-weight: bold; color: #2c3e50; }
+        .shv { font-size: 18px; color: #c0392b; font-weight: bold; }
+        .tank { margin-top: 20px; padding: 15px; background: #f8f9fa; border: 2px dashed #3498db; border-radius: 12px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+        .tile { background: #fff; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #dcdde1; }
+        .tl { font-size: 11px; color: #7f8c8d; font-weight: bold; text-transform: uppercase; }
+        .tv { font-size: 19px; font-weight: bold; margin-top: 5px; }
     </style>
 </head>
 <body>
-
-<div class="container">
+<div class="box">
     <h2>Розрахунок Обприскувача</h2>
+    <div class="info">Штанга 10м (20 форсунок). Головний орієнтир: <strong>~8 км/год</strong>, далі 10-11 км/год.</div>
     
-    <div class="info-box">
-        <strong>Конфігурація:</strong> Штанга 10м (20 форсунок, крок 50 см). Розрахунок тиску від 1.5 до 4.5 бар. Головний пріоритет: <strong>~8 км/год</strong>.
-    </div>
-
-    <!-- КРОК 1 -->
-    <div class="section-title">⚙️ Крок 1. Налаштування трактора</div>
-    <div class="input-group">
-        <label for="liters">Бажана норма виливу розчину (л/га):</label>
-        <input type="number" id="liters" placeholder="Введіть літри, наприклад: 150" min="1" max="500">
-    </div>
-
-    <button onclick="calculateSettings()">РОЗРАХУВАТИ ШВИДКІСТЬ</button>
-
-    <div id="output" class="results"></div>
+    <label>Бажана норма виливу (л/га):</label>
+    <input type="number" id="liters" placeholder="Наприклад: 150">
+    <button onclick="calc()">РОЗРАХУВАТИ ШВИДКІСТЬ</button>
     
-    <!-- КРОК 2 -->
-    <div id="tankBox" class="tank-calc-box" style="display: none;">
-        <div class="section-title" style="margin-top: 0; color: #2980b9;">📋 Крок 2. Розрахунок бака на площу</div>
-        
-        <div class="input-group">
-            <label for="hectares">Площа поля (гектарів, га):</label>
-            <input type="number" id="hectares" placeholder="Наприклад: 5.4" min="0.1" step="0.1" oninput="calculateTankMix()">
+    <div id="output"></div>
+    
+    <div id="tankBox" class="tank" style="display:none;">
+        <div style="font-weight:bold; color:#2980b9; text-align:center;">📋 Заправка бака на площу</div>
+        <div class="grid">
+            <div><label style="font-size:13px;">Площа поля (га):</label><input type="number" id="ha" oninput="tank()" placeholder="0.0"></div>
+            <div><label style="font-size:13px;">Препарат (л/га):</label><input type="number" id="chem" oninput="tank()" placeholder="0.0"></div>
         </div>
-        
-        <div class="input-group">
-            <label for="chemNorma">Норма препарату на 1 гектар (л/га або кг/га):</label>
-            <input type="number" id="chemNorma" placeholder="Наприклад: 2.0" min="0.01" step="0.01" oninput="calculateTankMix()">
-        </div>
-        
-        <div class="output-grid">
-            <div class="output-tile">
-                <div class="tile-label">Разом води</div>
-                <div id="totalWaterResult" class="tile-value water-text">0 л</div>
-            </div>
-            <div class="output-tile">
-                <div class="tile-label">Разом препарату</div>
-                <div id="totalChemResult" class="tile-value chem-text">0 л/кг</div>
-            </div>
+        <div class="grid">
+            <div class="tile"><div class="tl">Всього води</div><div id="voda" class="tv" style="color:#2980b9;">0 л</div></div>
+            <div class="tile"><div class="tl">Всього хімії</div><div id="him" class="tv" style="color:#e67e22;">0 л/кг</div></div>
         </div>
     </div>
 </div>
 
 <script>
-var currentNorma = 0;
-
-function calculateSettings() {
-    var inputField = document.getElementById('liters');
-    var outputDiv = document.getElementById('output');
-    var tankBox = document.getElementById('tankBox');
-    
-    outputDiv.innerHTML = '';
-    tankBox.style.display = 'none';
-
-    var normaTarget = parseFloat(inputField.value);
-    if (!normaTarget || normaTarget <= 0) {
-        outputDiv.innerHTML = '<div class="error-message">\u274c Будь ласка, введіть коректну кількість літрів!</div>';
-        return;
-    }
-
-    currentNorma = normaTarget;
-    var vidstan = 10.0 / 20; 
-
-    var baseNozzles = {
-        "ЖОВТІ": {"ref_p": 2.5, "ref_q": 0.775},
-        "СИНІ":  {"ref_p": 2.5, "ref_q": 1.250}
-    };
-
-    var vsiVarianty = [];
-
-    for (var color in baseNozzles) {
-        var data = baseNozzles[color];
-        for (var p_int = 15; p_int <= 45; p_int++) {
-            var p_test = p_int / 10.0;
-            var q_precise = data.ref_q * Math.sqrt(p_test / data.ref_p);
-            var speedNeeded = (q_precise * 600) / (vidstan * normaTarget);
-            
-            var score = 999;
-            
-            if (speedNeeded >= 7.5 && speedNeeded <= 8.5) {
-                score = Math.abs(speedNeeded - 8.0); 
-            } else if (speedNeeded >= 9.8 && speedNeeded <= 11.5) {
-                score = Math.abs(speedNeeded - 10.5) + 10; 
-            } else if (speedNeeded < 7.5 && speedNeeded >= 3.0) {
-                score = (8.0 - speedNeeded) + 100; 
-            } else if (speedNeeded > 11.5 && speedNeeded <= 16.0) {
-                score = (speedNeeded - 11.5) + 500;
-            }
-
-            vsiVarianty.push({
-                color: color,
-                pressure: p_test,
-                flow: q_precise,
-                speed: speedNeeded,
-                score: score
-            });
+var curN = 0;
+function calc() {
+    var n = parseFloat(document.getElementById('liters').value);
+    if (!n || n <= 0) { alert('Введіть літри!'); return; }
+    curN = n;
+    var res = [], f = {"ЖОВТІ": 0.775, "СИНІ": 1.250};
+    for (var col in f) {
+        for (var p = 15; p <= 45; p++) {
+            var bar = p / 10, q = f[col] * Math.sqrt(bar / 2.5), v = (q * 600) / (0.5 * n), sc = 999;
+            if (v >= 7.5 && v <= 8.5) sc = Math.abs(v - 8);
+            else if (v >= 9.8 && v <= 11.5) sc = Math.abs(v - 10.5) + 10;
+            else if (v < 7.5 && v >= 3) sc = (8 - v) + 100;
+            else if (v > 11.5 && v <= 16) sc = (v - 11.5) + 500;
+            res.push({c:col, p:bar, q:q, v:v, sc:sc});
         }
     }
-
-    vsiVarianty.sort(function(a, b) { return a.score - b.score; });
-
-    var recommended = vsiVarianty.slice(0, 2);
-
-    var htmlContent = '';
-    recommended.forEach(function(v, index) {
-        var cardClass = index === 0 ? 'card best' : 'card second';
-        var badgeClass = index === 0 ? 'badge badge-best' : 'badge badge-second';
-        var badgeText = index === 0 ? '\u2b50 \u0420\u0415\u041a\u041e\u041c\u0415\u041d\u0412\u0410\u041d\u0418\u0419 \u0420\u0415\u0416\u0418\u041c' : '\ud83d\udc4d \u0414\u0420\u0423\u0413\u0418\u0419 \u0412\u0410\u0420\u0410\u041d\u0422';
-
-        htmlContent += '<div class="' + cardClass + '">' +
-            '<div class="card-title">' +
-                '<span>' + v.color + ' форсунки</span>' +
-                '<span class="' + badgeClass + '">' + badgeText + '</span>' +
-            '</div>' +
-            '<div class="data-row">' +
-                '<span class="data-label">Робочий тиск:</span>' +
-                '<span class="data-value">' + v.pressure.toFixed(1) + ' бар</span>' +
-            '</div>' +
-            '<div class="data-row">' +
-                '<span class="data-label">Точна витрата:</span>' +
-                '<span class="data-value">' + v.flow.toFixed(3) + ' л/хв</span>' +
-            '</div>' +
+    res.sort(function(a,b){return a.sc - b.sc;});
+    var top = res.slice(0,2), html = '';
+    top.forEach(function(x, i){
+        var cls = i === 0 ? 'card b1' : 'card b2', txt = i === 0 ? '⭐ РЕКОМЕНДОВАНО' : '👍 ВАРІАНТ 2';
+        html += '<div class="'+cls+'"><div class="row"><span style="font-weight:bold">'+x.c+' форсунки</span><span style="font-size:12px;font-weight:bold">'+txt+'</span></div>' +
+            '<div class="row"><span>Тиск:</span><span class="val">'+x.p.toFixed(1)+' бар</span></div>' +
+            '<div class="row"><span>Витрата:</span><span class="val">'+x.q.toFixed(3)+' л/хв</span></div>' +
+            '<div class="row" style="margin-top:8px;border-top:1px dashed #ccc;padding-top:5px;"><span>ШВИДКІСТЬ:</span><span class="shv">'+x.v.toFixed(2)+' км/год</span></div></div>';
+    });
+    document.getElementById('output').innerHTML = html;
+    document.getElementById('ha').value = ''; document.getElementById('chem').value = '';
+    document.getElementById('voda').innerHTML = '0 л'; document.getElementById('him').innerHTML = '0 л/кг';
+    document.getElementById('tankBox').style.display = 'block';
+}
+function tank() {
+    var h = parseFloat(document.getElementById('ha').value), c = parseFloat(document.getElementById('chem').value);
+    if (h && h > 0) {
+        document.getElementById('voda').innerHTML = (h * curN).toFixed(0) + ' л';
+        document.getElementById('him').innerHTML = c && c > 0 ? (h * c).toFixed(2) + ' л/кг' : '0 л/кг';
+    } else {
+        document.getElementById('voda').innerHTML = '0 л'; document.getElementById('him').innerHTML = '0 л/кг';
+    }
+}
+</script>
+</body>
+</html>
