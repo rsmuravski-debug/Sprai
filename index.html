@@ -17,7 +17,7 @@
         .b2 { background: #fef9e7; border-left: 5px solid #f1c40f; }
         .row { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 15px; }
         .val { font-weight: bold; color: #2c3e50; }
-        .shv { font-size: 18px; color: #2ecc71; font-weight: bold; }
+        .shv { font-size: 19px; color: #e67e22; font-weight: bold; }
         .tank { margin-top: 20px; padding: 15px; background: #f8f9fa; border: 2px dashed #3498db; border-radius: 12px; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
         .tile { background: #fff; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #dcdde1; }
@@ -28,11 +28,11 @@
 <body>
 <div class="box">
     <h2>Розрахунок Обприскувача</h2>
-    <div class="info">Штанга 10м (20 форсунок).</div>
+    <div class="info">Штанга 10м (20 форсунок). Розрахунок швидкості при тиску <b>3.0 бар</b>.</div>
     
     <label>Бажана норма виливу (л/га):</label>
     <input type="number" id="liters" placeholder="Наприклад: 150">
-    <button onclick="calc()">РОЗРАХУВАТИ ТИСК</button>
+    <button onclick="calc()">РОЗРАХУВАТИ ШВИДКІСТЬ</button>
     
     <div id="output"></div>
     
@@ -40,7 +40,7 @@
         <div style="font-weight:bold; color:#2980b9; text-align:center;">📋 Заправка бака на площу</div>
         <div class="grid">
             <div><label style="font-size:13px;">Площа поля (га):</label><input type="number" id="ha" oninput="tank()" placeholder="0.0"></div>
-            <div><label style="font-size:13px;">Препарат (л/га):</label><input type="number" id="chem" oninput="tank()" placeholder="0.0"></div>
+            <div><label style="font-size:13px;">Препарат (л/га або кг/га):</label><input type="number" id="chem" oninput="tank()" placeholder="0.0"></div>
         </div>
         <div class="grid">
             <div class="tile"><div class="tl">Всього води</div><div id="voda" class="tv" style="color:#2980b9;">0 л</div></div>
@@ -56,32 +56,42 @@ function calc() {
     if (!n || n <= 0) { alert('Введіть літри!'); return; }
     curN = n;
     
-    // Розраховуємо необхідний хвилинний вилив на 1 форсунку для швидкості рівно 8 км/год
-    // Формула: q = (Q * B * V) / 600. Де B = 0.5м, V = 8 км/год. Скорочується до: q = (Q * 4) / 600
-    var targetQ = (n * 0.5 * 8) / 600; 
+    // Номінальний вилив форсунок (л/хв) при оптимальному тиску 3.0 бар відповідно до стандарту ISO
+    // Жовті (02) = 0.80 л/хв, Сині (03) = 1.20 л/хв
+    var f = {
+        "ЖОВТІ (02)": 0.80, 
+        "СИНІ (03)": 1.20
+    }; 
     
-    var f = {"ЖОВТІ": 0.775, "СИНІ": 1.250}, res = [];
-    
+    var res = [];
+    var targetBar = 3.0; // Стабільний робочий тиск
+
     for (var col in f) {
-        // За законом Бернуллі вираховуємо точний тиск під потрібний розхід: P = 2.5 * (targetQ / ref_q)^2
-        var exactBar = 2.5 * Math.pow((targetQ / f[col]), 2);
+        var qPerNozzle = f[col];
         
-        // Показуємо режим лише якщо тиск вписується в реальні межі обприскувача (від 1.0 до 5.0 бар)
-        if (exactBar >= 1.0 && exactBar <= 5.0) {
-            res.push({c: col, p: exactBar, q: targetQ, v: 8.0});
+        // Формула розрахунку швидкості: V = (600 * q) / (Q * B)
+        // Де B = 0.5 м (відстань між форсунками на штанзі)
+        var speed = (600 * qPerNozzle) / (n * 0.5);
+        
+        // Фільтр швидкості (показуємо лише варіанти від 4.5 до 16.0 км/год)
+        if (speed >= 4.5 && speed <= 16.0) {
+            res.push({c: col, p: targetBar, q: qPerNozzle, v: speed});
         }
     }
     
     var html = '';
     if (res.length === 0) {
-        html = '<div style="color:#e74c3c;font-weight:bold;text-align:center;padding:10px;">⚠️ Для такої норми на швидкості 8 км/год потрібен інший тип форсунок (червоні/інші).</div>';
+        html = '<div style="color:#e74c3c;font-weight:bold;text-align:center;padding:10px;">⚠️ При тиску 3.0 бар швидкість виходить за робочі межі (потрібно їхати або занадто швидко, або занадто повільно). Змініть норму виливу!</div>';
     } else {
         res.forEach(function(x, i){
-            var cls = i === 0 ? 'card b1' : 'card b2', txt = i === 0 ? '⭐ ВАРІАНТ 1' : '👍 ВАРІАНТ 2';
-            html += '<div class="'+cls+'"><div class="row"><span style="font-weight:bold">'+x.c+' форсунки</span><span style="font-size:12px;font-weight:bold">'+txt+'</span></div>' +
-                '<div class="row"><span>Необхідний тиск:</span><span class="val" style="color:#c0392b;font-size:16px;">'+x.p.toFixed(2)+' бар</span></div>' +
-                '<div class="row"><span>Витрата форсунки:</span><span class="val">'+x.q.toFixed(3)+' л/хв</span></div>' +
-                '<div class="row" style="margin-top:8px;border-top:1px dashed #ccc;padding-top:5px;"><span>РОБОЧА ШВИДКІСТЬ:</span><span class="shv">'+x.v.toFixed(1)+' км/год</span></div></div>';
+            var cardClass = i === 0 ? 'card b1' : 'card b2';
+            
+            html += '<div class="'+cardClass+'">' +
+                '<div class="row"><span style="font-weight:bold; color:#2c3e50;">' + x.c + '</span><span style="font-size:12px;font-weight:bold;color:#7f8c8d;">ВАРІАНТ '+(i+1)+'</span></div>' +
+                '<div class="row"><span>Робочий тиск:</span><span class="val" style="color:#2980b9;">' + x.p.toFixed(1) + ' бар</span></div>' +
+                '<div class="row"><span>Витрата однієї форсунки:</span><span class="val">' + x.q.toFixed(2) + ' л/хв</span></div>' +
+                '<div class="row" style="margin-top:8px;border-top:1px dashed #ccc;padding-top:5px;"><span>НЕОБХІДНА ШВИДКІСТЬ:</span><span class="shv">' + x.v.toFixed(1) + ' км/год</span></div>' +
+                '</div>';
         });
     }
     
@@ -90,6 +100,7 @@ function calc() {
     document.getElementById('voda').innerHTML = '0 л'; document.getElementById('him').innerHTML = '0 л/кг';
     document.getElementById('tankBox').style.display = 'block';
 }
+
 function tank() {
     var h = parseFloat(document.getElementById('ha').value), c = parseFloat(document.getElementById('chem').value);
     if (h && h > 0) {
