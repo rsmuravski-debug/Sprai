@@ -7,17 +7,20 @@
     <style>
         body { font-family: system-ui; background: #f4f6f9; padding: 15px; color: #333; }
         .box { max-width: 480px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); }
-        h2 { text-align: center; color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 8px; }
+        h2 { text-align: center; color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 8px; margin-top: 0; }
         .info { background: #e8f4fd; border-left: 4px solid #3498db; padding: 10px; font-size: 13px; border-radius: 4px; margin-bottom: 15px; }
         label { display: block; font-weight: bold; margin: 10px 0 5px; font-size: 15px; }
-        input { width: 100%; padding: 12px; font-size: 18px; border: 2px solid #bdc3c7; border-radius: 8px; box-sizing: border-box; }
-        button { width: 100%; background: #2ecc71; color: #fff; border: none; padding: 14px; font-size: 18px; font-weight: bold; border-radius: 8px; margin: 15px 0; cursor: pointer; }
+        input[type="number"] { width: 100%; padding: 12px; font-size: 18px; border: 2px solid #bdc3c7; border-radius: 8px; box-sizing: border-box; }
+        input[type="range"] { width: 100%; margin: 10px 0; }
+        .speed-val { font-size: 18px; font-weight: bold; color: #e67e22; text-align: center; margin-bottom: 10px; }
+        button { width: 100%; background: #2ecc71; color: #fff; border: none; padding: 14px; font-size: 18px; font-weight: bold; border-radius: 8px; margin: 15px 0; cursor: pointer; transition: background 0.2s; }
+        button:hover { background: #27ae60; }
         .card { padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #e0e0e0; }
         .b1 { background: #ebf9eb; border-left: 5px solid #2ecc71; }
         .b2 { background: #fef9e7; border-left: 5px solid #f1c40f; }
-        .row { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 15px; }
+        .row { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 15px; align-items: center; }
         .val { font-weight: bold; color: #2c3e50; }
-        .shv { font-size: 19px; color: #e67e22; font-weight: bold; }
+        .shv { font-size: 19px; color: #2980b9; font-weight: bold; }
         .tank { margin-top: 20px; padding: 15px; background: #f8f9fa; border: 2px dashed #3498db; border-radius: 12px; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
         .tile { background: #fff; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #dcdde1; }
@@ -28,11 +31,16 @@
 <body>
 <div class="box">
     <h2>Розрахунок Обприскувача</h2>
-    <div class="info">Штанга 10м (20 форсунок). Розрахунок швидкості при тиску <b>3.0 бар</b>.</div>
+    <div class="info">Штанга 10м (20 форсунок, крок 0.5м). Автоматичний підбір тиску в межах <b>1.5 - 5.0 бар</b>.</div>
     
     <label>Бажана норма виливу (л/га):</label>
-    <input type="number" id="liters" placeholder="Наприклад: 150">
-    <button onclick="calc()">РОЗРАХУВАТИ ШВИДКІСТЬ</button>
+    <input type="number" id="liters" placeholder="Наприклад: 150" value="150">
+    
+    <label>Планована швидкість руху (км/год):</label>
+    <div class="speed-val"><span id="speedTxt">8.0</span> км/год</div>
+    <input type="range" id="speedRange" min="4" max="16" step="0.5" value="8" oninput="document.getElementById('speedTxt').innerText = parseFloat(this.value).toFixed(1)">
+
+    <button onclick="calc()">РОЗРАХУВАТИ ТИСК</button>
     
     <div id="output"></div>
     
@@ -40,7 +48,7 @@
         <div style="font-weight:bold; color:#2980b9; text-align:center;">📋 Заправка бака на площу</div>
         <div class="grid">
             <div><label style="font-size:13px;">Площа поля (га):</label><input type="number" id="ha" oninput="tank()" placeholder="0.0"></div>
-            <div><label style="font-size:13px;">Препарат (л/га або кг/га):</label><input type="number" id="chem" oninput="tank()" placeholder="0.0"></div>
+            <div><label style="font-size:13px;">Препарат (л або кг/га):</label><input type="number" id="chem" oninput="tank()" placeholder="0.0"></div>
         </div>
         <div class="grid">
             <div class="tile"><div class="tl">Всього води</div><div id="voda" class="tv" style="color:#2980b9;">0 л</div></div>
@@ -53,44 +61,46 @@
 var curN = 0;
 function calc() {
     var n = parseFloat(document.getElementById('liters').value);
-    if (!n || n <= 0) { alert('Введіть літри!'); return; }
+    var v = parseFloat(document.getElementById('speedRange').value);
+    if (!n || n <= 0) { alert('Введіть норму виливу!'); return; }
     curN = n;
     
-    // Номінальний вилив форсунок (л/хв) при оптимальному тиску 3.0 бар відповідно до стандарту ISO
-    // Жовті (02) = 0.80 л/хв, Сині (03) = 1.20 л/хв
+    // Номінальні параметри ISO форсунок при базовому тиску 3.0 бар
     var f = {
-        "ЖОВТІ (02)": 0.80, 
-        "СИНІ (03)": 1.20
+        "ЖОВТІ (02)": { qBase: 0.80, pBase: 3.0 }, 
+        "СИНІ (03)": { qBase: 1.20, pBase: 3.0 }
     }; 
     
     var res = [];
-    var targetBar = 3.0; // Стабільний робочий тиск
+    var spacing = 0.5; // відстань між форсунками в метрах
+
+    // Формула необхідного виливу з однієї форсунки: q = (Q * V * B) / 600
+    var qNeeded = (n * v * spacing) / 600;
 
     for (var col in f) {
-        var qPerNozzle = f[col];
+        var base = f[col];
         
-        // Формула розрахунку швидкості: V = (600 * q) / (Q * B)
-        // Де B = 0.5 м (відстань між форсунками на штанзі)
-        var speed = (600 * qPerNozzle) / (n * 0.5);
+        // Розрахунок тиску за квадратичною залежністю: P = P_base * (q_needed / q_base)^2
+        var requiredBar = base.pBase * Math.pow((qNeeded / base.qBase), 2);
         
-        // Фільтр швидкості (показуємо лише варіанти від 4.5 до 16.0 км/год)
-        if (speed >= 4.5 && speed <= 16.0) {
-            res.push({c: col, p: targetBar, q: qPerNozzle, v: speed});
+        // Перевірка, чи входить тиск в адекватний робочий діапазон (від 1.5 до 5.0 бар)
+        if (requiredBar >= 1.5 && requiredBar <= 5.0) {
+            res.push({c: col, p: requiredBar, q: qNeeded, v: v});
         }
     }
     
     var html = '';
     if (res.length === 0) {
-        html = '<div style="color:#e74c3c;font-weight:bold;text-align:center;padding:10px;">⚠️ При тиску 3.0 бар швидкість виходить за робочі межі (потрібно їхати або занадто швидко, або занадто повільно). Змініть норму виливу!</div>';
+        html = '<div style="color:#e74c3c;font-weight:bold;text-align:center;padding:10px;">⚠️ Для швидкості ' + v.toFixed(1) + ' км/год тиск виходить за безпечні межі (1.5 - 5.0 бар). Спробуйте змінити швидкість або норму виливу!</div>';
     } else {
         res.forEach(function(x, i){
             var cardClass = i === 0 ? 'card b1' : 'card b2';
             
             html += '<div class="'+cardClass+'">' +
                 '<div class="row"><span style="font-weight:bold; color:#2c3e50;">' + x.c + '</span><span style="font-size:12px;font-weight:bold;color:#7f8c8d;">ВАРІАНТ '+(i+1)+'</span></div>' +
-                '<div class="row"><span>Робочий тиск:</span><span class="val" style="color:#2980b9;">' + x.p.toFixed(1) + ' бар</span></div>' +
-                '<div class="row"><span>Витрата однієї форсунки:</span><span class="val">' + x.q.toFixed(2) + ' л/хв</span></div>' +
-                '<div class="row" style="margin-top:8px;border-top:1px dashed #ccc;padding-top:5px;"><span>НЕОБХІДНА ШВИДКІСТЬ:</span><span class="shv">' + x.v.toFixed(1) + ' км/год</span></div>' +
+                '<div class="row" style="margin-top:5px; padding-top:5px; border-bottom:1px dashed #ccc;"><span>НЕОБХІДНИЙ ТИСК:</span><span class="shv" style="color:#e67e22;">' + x.p.toFixed(2) + ' бар</span></div>' +
+                '<div class="row" style="margin-top:5px;"><span>Витрата однієї форсунки:</span><span class="val">' + x.q.toFixed(2) + ' л/хв</span></div>' +
+                '<div class="row"><span>Швидкість руху:</span><span class="val">' + x.v.toFixed(1) + ' км/год</span></div>' +
                 '</div>';
         });
     }
