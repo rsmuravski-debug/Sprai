@@ -13,8 +13,8 @@
         input { width: 100%; padding: 12px; font-size: 18px; border: 2px solid #bdc3c7; border-radius: 8px; box-sizing: border-box; }
         button { width: 100%; background: #2ecc71; color: #fff; border: none; padding: 14px; font-size: 18px; font-weight: bold; border-radius: 8px; margin: 15px 0; cursor: pointer; }
         .card { padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #e0e0e0; }
-        .b1 { background: #ebf9eb; border-left: 5px solid #2ecc71; }
-        .b2 { background: #fef9e7; border-left: 5px solid #f1c40f; }
+        .b-yellow { background: #fffde7; border-left: 5px solid #f1c40f; }
+        .b-blue { background: #eef7fe; border-left: 5px solid #3498db; }
         .row { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 15px; }
         .val { font-weight: bold; color: #2c3e50; }
         .shv { font-size: 19px; color: #e67e22; font-weight: bold; }
@@ -28,9 +28,9 @@
 <body>
 <div class="box">
     <h2>Розрахунок Обприскувача</h2>
-    <div class="info">Штанга 10м (20 форсунок). Розрахунок швидкості при тиску <b>НЕ БІЛЬШЕ 3.0 бар</b>.</div>
+    <div class="info">Штанга 10м (20 форсунок). Розрахунок швидкості за Вашими замірами (тиск <b>до 3.0 бар</b>).</div>
     
-    <label>Бажана norma виливу (л/га):</label>
+    <label>Бажана норма виливу (л/га):</label>
     <input type="number" id="liters" placeholder="Наприклад: 150">
     <button onclick="calc()">РОЗРАХУВАТИ ШВИДКІСТЬ</button>
     
@@ -56,51 +56,46 @@ function calc() {
     if (!n || n <= 0) { alert('Введіть літри!'); return; }
     curN = n;
     
-    // Базові дані ISO: колір, номінальна витрата (л/хв) при 3.0 бар
-    var nozzles = {
-        "ЖОВТІ (02)": { qBase: 0.80, pBase: 3.0 },
-        "СИНІ (03)": { qBase: 1.20, pBase: 3.0 }
-    }; 
+    // Внесені Ваші точні заміри виливу в л/хв (переведено з мл)
+    var data = [
+        { name: "ЖОВТІ", pressure: 2.0, flow: 0.625, type: "yellow" },
+        { name: "ЖОВТІ", pressure: 2.5, flow: 0.775, type: "yellow" },
+        { name: "ЖОВТІ", pressure: 3.0, flow: 0.875, type: "yellow" },
+        { name: "СИНІ", pressure: 2.0, flow: 1.125, type: "blue" },
+        { name: "СИНІ", pressure: 2.5, flow: 1.250, type: "blue" },
+        { name: "СИНІ", pressure: 3.0, flow: 1.350, type: "blue" }
+    ];
     
     var res = [];
-    var minSpeed = 4.0;  // Мінімальна адекватна швидкість (км/год)
-    var maxSpeed = 15.0; // Максимальна робоча швидкість (км/год)
+    var minSpeed = 4.0;  // Мінімальна технологічна швидкість
+    var maxSpeed = 16.0; // Максимальна технологічна швидкість
 
-    // Перебираємо форсунки
-    for (var col in nozzles) {
-        var f = nozzles[col];
+    data.forEach(function(item) {
+        // Формула швидкості: V = (600 * q) / (Q * B), де B = 0.5 метра
+        var speed = (600 * item.flow) / (n * 0.5);
         
-        // Тестуємо два режими тиску: макс (3.0 бар) та оптимальний знижений (2.0 бар)
-        // щоб дати агроному вибір по швидкості руху.
-        var targetPressures = [3.0, 2.0]; 
-        
-        targetPressures.forEach(function(pTarget) {
-            // Формула витрати форсунки залежно від тиску: q = qBase * sqrt(pTarget / pBase)
-            var qCurrent = f.qBase * Math.sqrt(pTarget / f.pBase);
-            
-            // Формула швидкості: V = (600 * q) / (Q * B)
-            var speed = (600 * qCurrent) / (n * 0.5);
-            
-            // Перевіряємо, чи швидкість реальна для трактора
-            if (speed >= minSpeed && speed <= maxSpeed) {
-                res.push({c: col, p: pTarget, q: qCurrent, v: speed});
-            }
-        });
-    }
-    
-    // Сортуємо результати від вищого тиску до нижчого (щоб кращі варіанти були зверху)
-    res.sort(function(a, b) { return b.p - a.p; });
+        // Фільтруємо лише ті варіанти, де швидкість реальна для трактора
+        if (speed >= minSpeed && speed <= maxSpeed) {
+            res.push({
+                name: item.name,
+                p: item.pressure,
+                q: item.flow,
+                v: speed,
+                type: item.type
+            });
+        }
+    });
 
     var html = '';
     if (res.length === 0) {
-        html = '<div style="color:#e74c3c;font-weight:bold;text-align:center;padding:10px;">⚠️ При тиску до 3.0 бар не вдається підібрати робочу швидкість (4-15 км/год). Змініть норму виливу!</div>';
+        html = '<div style="color:#e74c3c;font-weight:bold;text-align:center;padding:10px;">⚠️ При ваших параметрах виливу швидкість виходить за межі 4-16 км/год. Змініть норму виливу (л/га)!</div>';
     } else {
-        res.forEach(function(x, i){
-            var cardClass = x.p === 3.0 ? 'card b1' : 'card b2';
+        res.forEach(function(x) {
+            var cardClass = x.type === 'yellow' ? 'card b-yellow' : 'card b-blue';
             
-            html += '<div class="'+cardClass+'">' +
-                '<div class="row"><span style="font-weight:bold; color:#2c3e50;">' + x.c + '</span><span style="font-size:12px;font-weight:bold;color:#7f8c8d;">ТИСК: ' + x.p.toFixed(1) + ' БАР</span></div>' +
-                '<div class="row"><span>Поточна витрата форсунки:</span><span class="val">' + x.q.toFixed(2) + ' л/хв</span></div>' +
+            html += '<div class="' + cardClass + '">' +
+                '<div class="row"><span style="font-weight:bold; color:#2c3e50;">' + x.name + '</span><span style="font-size:12px;font-weight:bold;color:#7f8c8d;">ТИСК: ' + x.p.toFixed(1) + ' БАР</span></div>' +
+                '<div class="row"><span>Фактична витрата:</span><span class="val">' + x.q.toFixed(3) + ' л/хв (на форсунку)</span></div>' +
                 '<div class="row" style="margin-top:8px;border-top:1px dashed #ccc;padding-top:5px;"><span>НЕОБХІДНА ШВИДКІСТЬ:</span><span class="shv">' + x.v.toFixed(1) + ' км/год</span></div>' +
                 '</div>';
         });
@@ -113,14 +108,4 @@ function calc() {
 }
 
 function tank() {
-    var h = parseFloat(document.getElementById('ha').value), c = parseFloat(document.getElementById('chem').value);
-    if (h && h > 0) {
-        document.getElementById('voda').innerHTML = (h * curN).toFixed(0) + ' л';
-        document.getElementById('him').innerHTML = c && c > 0 ? (h * c).toFixed(2) + ' л/кг' : '0 л/кг';
-    } else {
-        document.getElementById('voda').innerHTML = '0 л'; document.getElementById('him').innerHTML = '0 л/кг';
-    }
-}
-</script>
-</body>
-</html>
+    var h = parseFloat(document.getElementById('ha').value), c
